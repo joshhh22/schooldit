@@ -172,6 +172,16 @@ export function PostCard({ post, isDetailedView = false }: PostCardProps) {
                     loading="lazy"
                   />
                 )}
+                {att.type === 'video' && (
+                  <video
+                    src={att.url}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    className="max-h-[500px] w-full rounded-xl bg-black"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                )}
                 {att.type === 'document' && (
                   <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-[#162035] w-full">
                     <FileText className="w-6 h-6 text-sky-400 shrink-0" />

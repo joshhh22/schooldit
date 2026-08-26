@@ -11,7 +11,7 @@ import {
   Plus,
   Trash2,
   UploadCloud,
-  Hash,
+  Film,
 } from 'lucide-react';
 import { PostFlair, PostType, Attachment } from '@/lib/types';
 import { useSchooldit } from '@/lib/store';
@@ -80,8 +80,8 @@ export function PostComposer({ onSuccess, defaultSchoolId }: PostComposerProps) 
     if (!files || files.length === 0) return;
 
     const file = files[0];
-    if (file.size > 15 * 1024 * 1024) {
-      showToast('Ukuran File Terlalu Besar', 'Maksimal ukuran file adalah 15MB.', 'error');
+    if (file.size > 100 * 1024 * 1024) {
+      showToast('Ukuran File Terlalu Besar', 'Maksimal ukuran file adalah 100MB.', 'error');
       return;
     }
 
@@ -93,19 +93,20 @@ export function PostComposer({ onSuccess, defaultSchoolId }: PostComposerProps) 
       setIsUploading(false);
 
       const isImg = file.type.startsWith('image/');
+      const isVid = file.type.startsWith('video/') || file.name.endsWith('.mp4') || file.name.endsWith('.webm') || file.name.endsWith('.mov');
       const objectUrl = URL.createObjectURL(file);
 
       setAttachments((prev) => [
         ...prev,
         {
           id: `att-${Date.now()}`,
-          type: isImg ? 'image' : 'document',
+          type: isVid ? 'video' : isImg ? 'image' : 'document',
           url: objectUrl,
           name: file.name,
           size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
         },
       ]);
-      showToast('File Terunggah', file.name, 'success');
+      showToast('Media Terunggah', `${file.name} berhasil ditambahkan.`, 'success');
     }, 400);
   };
 
@@ -117,8 +118,8 @@ export function PostComposer({ onSuccess, defaultSchoolId }: PostComposerProps) 
       return;
     }
 
-    if (!content.trim()) {
-      showToast('Isi Postingan Wajib Diisi', 'Tuliskan deskripsi atau isi cerita.', 'error');
+    if (!content.trim() && attachments.length === 0 && activeType !== 'poll') {
+      showToast('Isi Postingan Wajib Diisi', 'Tuliskan deskripsi atau unggah media.', 'error');
       return;
     }
 
@@ -142,7 +143,7 @@ export function PostComposer({ onSuccess, defaultSchoolId }: PostComposerProps) 
       title: title.trim(),
       content: content.trim(),
       flair: finalFlair,
-      type: activeType,
+      type: attachments.some((a) => a.type === 'video') ? 'video' : activeType,
       attachments: attachments.length > 0 ? attachments : undefined,
       poll: pollData,
       linkUrl: linkUrl.trim() || undefined,
@@ -203,7 +204,7 @@ export function PostComposer({ onSuccess, defaultSchoolId }: PostComposerProps) 
           </button>
         </div>
 
-        {/* Tabs (Post, Image, Poll, Link) */}
+        {/* Tabs (Post, Image & Video, Poll, Link) */}
         <div className="flex items-center border-b border-slate-200 dark:border-[#1e293b] text-xs font-bold">
           {[
             { type: 'text' as PostType, label: 'Post', icon: FileText },
@@ -258,18 +259,19 @@ export function PostComposer({ onSuccess, defaultSchoolId }: PostComposerProps) 
             </div>
           )}
 
-          {/* Media Upload Area */}
+          {/* Media Upload Area (Images & Video MP4 / WebM / QuickTime) */}
           {activeType === 'image' && (
             <div className="space-y-3 p-6 bg-slate-50 dark:bg-[#162035] rounded-xl border border-dashed border-slate-300 dark:border-[#334155] text-center">
               <UploadCloud className="w-8 h-8 text-sky-400 mx-auto mb-2" />
               <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                Drag and drop images or upload
+                Drag and drop images, video (MP4, WebM, MOV), or documents
               </p>
+              <p className="text-[11px] text-slate-400">Maksimal 100MB per file</p>
               <label className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-full cursor-pointer transition-all">
-                <span>Upload Media</span>
+                <span>Upload Media (Foto / MP4 Video)</span>
                 <input
                   type="file"
-                  accept="image/*,.pdf"
+                  accept="image/*,video/*,.mp4,.mov,.webm,.mkv,.pdf"
                   onChange={handleUploadFile}
                   className="hidden"
                 />
@@ -289,17 +291,24 @@ export function PostComposer({ onSuccess, defaultSchoolId }: PostComposerProps) 
                   {attachments.map((att) => (
                     <div
                       key={att.id}
-                      className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-[#1e293b] h-24 bg-black flex items-center justify-center group"
+                      className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-[#1e293b] h-28 bg-black flex items-center justify-center group"
                     >
                       {att.type === 'image' ? (
                         <img src={att.url} alt={att.name} className="w-full h-full object-cover" />
+                      ) : att.type === 'video' ? (
+                        <div className="w-full h-full relative flex items-center justify-center bg-slate-900">
+                          <video src={att.url} className="w-full h-full object-cover" muted />
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center pointer-events-none">
+                            <Film className="w-6 h-6 text-white" />
+                          </div>
+                        </div>
                       ) : (
-                        <span className="text-white text-xs">{att.name}</span>
+                        <span className="text-white text-xs p-2 text-center truncate">{att.name}</span>
                       )}
                       <button
                         type="button"
                         onClick={() => setAttachments(attachments.filter((a) => a.id !== att.id))}
-                        className="absolute top-1 right-1 p-1 bg-black/80 hover:bg-rose-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                        className="absolute top-1 right-1 p-1 bg-black/80 hover:bg-rose-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all z-10"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -398,7 +407,7 @@ export function PostComposer({ onSuccess, defaultSchoolId }: PostComposerProps) 
               type="text"
               value={customFlair}
               onChange={(e) => setCustomFlair(e.target.value)}
-              placeholder="Atau ketik topik kustom sendiri (contoh: CURHATAN, GOSIP, PR)..."
+              placeholder="Atau ketik topik kustom sendiri (contoh: BASKET, MLBB, CURHAT, GOSIP)..."
               className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-[#1e293b] bg-slate-50 dark:bg-[#162035] text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:border-sky-500"
             />
           </div>

@@ -94,19 +94,19 @@ export function SidebarRight() {
             <li>
               <strong className="text-slate-900 dark:text-white uppercase tracking-wide">freedom</strong>
               <p className="pl-4 text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
-                Bebas ngomong, curhat, diskusi, spill fakta, tanpa batasan topik.
+                HIDUP KEBEBASAN
               </p>
             </li>
             <li>
               <strong className="text-slate-900 dark:text-white uppercase tracking-wide">no cepu</strong>
               <p className="pl-4 text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
-                Dilarang keras doxxing, sebar data pribadi, nama asli, atau nomor WA orang lain.
+                DILARANG CEPU GURU, CEPU GURU = ZIONIS
               </p>
             </li>
             <li>
               <strong className="text-slate-900 dark:text-white uppercase tracking-wide">no baper</strong>
               <p className="pl-4 text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
-                Opini orang beda-beda. Jangan gampang tersinggung, nikmati obrolan santai.
+                BAPES = ZIONIS
               </p>
             </li>
           </ol>
