@@ -80,34 +80,40 @@ export function PostComposer({ onSuccess, defaultSchoolId }: PostComposerProps) 
     if (!files || files.length === 0) return;
 
     const file = files[0];
-    if (file.size > 100 * 1024 * 1024) {
-      showToast('Ukuran File Terlalu Besar', 'Maksimal ukuran file adalah 100MB.', 'error');
+    if (file.size > 50 * 1024 * 1024) {
+      showToast('Ukuran File Terlalu Besar', 'Maksimal ukuran file adalah 50MB.', 'error');
       return;
     }
 
     setIsUploading(true);
     setUploadProgress(30);
 
-    setTimeout(() => {
+    const isImg = file.type.startsWith('image/');
+    const isVid = file.type.startsWith('video/') || file.name.endsWith('.mp4') || file.name.endsWith('.webm') || file.name.endsWith('.mov');
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
       setUploadProgress(100);
       setIsUploading(false);
-
-      const isImg = file.type.startsWith('image/');
-      const isVid = file.type.startsWith('video/') || file.name.endsWith('.mp4') || file.name.endsWith('.webm') || file.name.endsWith('.mov');
-      const objectUrl = URL.createObjectURL(file);
 
       setAttachments((prev) => [
         ...prev,
         {
           id: `att-${Date.now()}`,
           type: isVid ? 'video' : isImg ? 'image' : 'document',
-          url: objectUrl,
+          url: dataUrl,
           name: file.name,
           size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
         },
       ]);
-      showToast('Media Terunggah', `${file.name} berhasil ditambahkan.`, 'success');
-    }, 400);
+      showToast('Media Terunggah', `${file.name} siap diposting.`, 'success');
+    };
+    reader.onerror = () => {
+      setIsUploading(false);
+      showToast('Gagal Membaca File', 'Terjadi kesalahan saat memproses media.', 'error');
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = (e: React.FormEvent) => {

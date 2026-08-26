@@ -188,7 +188,7 @@ export function SchoolditProvider({ children }: { children: React.ReactNode }) {
                 viewCount: d.view_count || 1,
                 tags: d.tags || [],
                 linkUrl: d.link_url,
-                attachments: [],
+                attachments: Array.isArray(d.attachments) ? d.attachments : [],
               }));
               setPosts(mapped);
             }
@@ -477,12 +477,13 @@ export function SchoolditProvider({ children }: { children: React.ReactNode }) {
         title: postData.title,
         content: postData.content,
         flair: postData.flair,
-        post_type: postData.type,
+        post_type: postData.attachments?.some((a) => a.type === 'video') ? 'video' : postData.type,
         votes: 1,
         comments_count: 0,
         view_count: 1,
         tags: postData.tags || [`#${postData.flair.toLowerCase()}`],
         link_url: postData.linkUrl || null,
+        attachments: postData.attachments || [],
       }).then();
     }
 

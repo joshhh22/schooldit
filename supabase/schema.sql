@@ -55,9 +55,13 @@ CREATE TABLE IF NOT EXISTS posts (
     is_locked BOOLEAN DEFAULT false,
     tags TEXT[] DEFAULT '{}',
     link_url TEXT,
+    attachments JSONB DEFAULT '[]',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Migration safety: ensure attachments column exists
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS attachments JSONB DEFAULT '[]';
 
 -- 4. ATTACHMENTS
 CREATE TABLE IF NOT EXISTS attachments (
