@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Send, MessageCircle } from 'lucide-react';
+import { MessageCircle, Send, Lock } from 'lucide-react';
 import { Comment } from '@/lib/types';
 import { useSchooldit } from '@/lib/store';
 import { CommentItem } from './CommentItem';
@@ -13,50 +13,48 @@ interface CommentTreeProps {
 }
 
 export function CommentTree({ postId, comments }: CommentTreeProps) {
-  const { addComment, session } = useSchooldit();
+  const { session, addComment } = useSchooldit();
   const { showToast } = useToast();
-  const [commentText, setCommentText] = useState('');
+  const [newComment, setNewComment] = useState('');
 
-  const handleAddComment = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!commentText.trim()) return;
+    if (!newComment.trim()) return;
 
-    addComment(postId, commentText.trim());
-    setCommentText('');
-    showToast('Komentar Terkirim!', `Diposting sebagai ${session.pseudonym}`, 'success');
+    addComment(postId, newComment.trim());
+    setNewComment('');
+    showToast('Komentar Terkirim', 'Komentar anonimmu telah diterbitkan.', 'success');
   };
 
   return (
-    <div className="space-y-4">
-      {/* Top Level Comment Composer */}
-      <form
-        onSubmit={handleAddComment}
-        className="p-3 sm:p-4 bg-slate-50 dark:bg-[#1a1f26] rounded-xl border border-slate-200 dark:border-[#252c36]"
-      >
-        <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+    <div className="space-y-6 font-sans">
+      {/* Comment Input Box */}
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
           <span>Komentar sebagai</span>
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white dark:bg-[#14181d] border border-slate-200 dark:border-[#252c36] text-slate-800 dark:text-slate-200">
-            <span>{session.avatar}</span>
-            <span>{session.pseudonym}</span>
+          <span className="font-semibold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-[#162035] px-2 py-0.5 rounded-full border border-slate-200 dark:border-[#1e293b]">
+            {session.avatar} {session.pseudonym}
           </span>
         </div>
 
         <textarea
           rows={3}
-          value={commentText}
-          onChange={(e) => setCommentText(e.target.value)}
+          value={newComment}
+          onChange={(e) => setNewComment(e.target.value)}
           placeholder="What are your thoughts?"
-          className="w-full text-xs sm:text-sm p-3 rounded-xl border border-slate-200 dark:border-[#252c36] bg-white dark:bg-[#14181d] text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:border-orange-500 transition-all"
+          className="w-full text-xs sm:text-sm p-3 rounded-xl border border-slate-200 dark:border-[#1e293b] bg-slate-50 dark:bg-[#162035] text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:border-sky-500 transition-all font-sans"
         />
 
-        <div className="flex items-center justify-between mt-2.5">
-          <span className="text-[11px] text-slate-400">
-            🔒 Identitas asli tidak ditampilkan.
-          </span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+            <Lock className="w-3 h-3 text-emerald-400" />
+            <span>Identitas asli tidak ditampilkan.</span>
+          </div>
+
           <button
             type="submit"
-            disabled={!commentText.trim()}
-            className="flex items-center gap-1.5 px-4 py-1.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 text-white text-xs font-bold rounded-full transition-all active:scale-95"
+            disabled={!newComment.trim()}
+            className="flex items-center gap-1.5 px-4 py-1.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-40 text-white text-xs font-bold rounded-full transition-all active:scale-95 shadow-xs"
           >
             <Send className="w-3.5 h-3.5" />
             <span>Comment</span>
@@ -64,25 +62,25 @@ export function CommentTree({ postId, comments }: CommentTreeProps) {
         </div>
       </form>
 
+      <hr className="border-slate-200 dark:border-[#1e293b]" />
+
       {/* Comments List */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-            <MessageCircle className="w-3.5 h-3.5 text-orange-500" />
-            <span>Comments ({comments.length})</span>
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <MessageCircle className="w-4 h-4 text-sky-400" />
+          <h4 className="font-heading font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200">
+            COMMENTS ({comments.length})
           </h4>
         </div>
 
         {comments.length === 0 ? (
-          <div className="text-center py-8 px-4 border border-dashed border-slate-200 dark:border-[#252c36] rounded-xl">
-            <p className="text-xs text-slate-400">
-              No comments yet. Be the first to share what you think!
-            </p>
+          <div className="py-8 text-center text-xs text-slate-400 border border-dashed border-slate-200 dark:border-[#1e293b] rounded-xl bg-slate-50/50 dark:bg-[#162035]/30">
+            No comments yet. Be the first to share what you think!
           </div>
         ) : (
-          <div className="divide-y divide-slate-100 dark:divide-[#252c36]">
+          <div className="space-y-3">
             {comments.map((comment) => (
-              <CommentItem key={comment.id} comment={comment} postId={postId} depth={0} />
+              <CommentItem key={comment.id} comment={comment} postId={postId} />
             ))}
           </div>
         )}

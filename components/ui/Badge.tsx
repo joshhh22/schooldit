@@ -1,107 +1,113 @@
+'use client';
+
 import React from 'react';
+import {
+  Flame,
+  MessageSquare,
+  Sparkles,
+  Smile,
+  Heart,
+  HelpCircle,
+  Megaphone,
+  Calendar,
+  Hash,
+} from 'lucide-react';
 import { PostFlair } from '@/lib/types';
 
-interface FlairBadgeProps {
-  flair: PostFlair;
-  size?: 'sm' | 'md' | 'lg';
-  interactive?: boolean;
-  selected?: boolean;
-  onClick?: () => void;
-}
-
 const FLAIR_CONFIG: Record<
-  PostFlair,
-  { label: string; icon: string; bg: string; text: string; border: string }
+  string,
+  { label: string; icon: React.ElementType; bg: string; text: string; border: string }
 > = {
   RAMAI: {
     label: 'RAMAI',
-    icon: '🔥',
-    bg: 'bg-orange-500/10 dark:bg-orange-500/15',
-    text: 'text-orange-600 dark:text-orange-400',
-    border: 'border-orange-500/30 dark:border-orange-500/30',
+    icon: Flame,
+    bg: 'bg-sky-500/10 dark:bg-sky-500/15',
+    text: 'text-sky-600 dark:text-sky-400',
+    border: 'border-sky-500/30 dark:border-sky-500/30',
   },
   SPILL: {
     label: 'SPILL',
-    icon: '👀',
+    icon: Sparkles,
     bg: 'bg-amber-500/10 dark:bg-amber-500/15',
-    text: 'text-amber-700 dark:text-amber-400',
+    text: 'text-amber-600 dark:text-amber-400',
     border: 'border-amber-500/30 dark:border-amber-500/30',
   },
   NGOBROL: {
     label: 'NGOBROL',
-    icon: '💬',
+    icon: MessageSquare,
     bg: 'bg-blue-500/10 dark:bg-blue-500/15',
     text: 'text-blue-600 dark:text-blue-400',
     border: 'border-blue-500/30 dark:border-blue-500/30',
   },
   WKWK: {
     label: 'WKWK',
-    icon: '😂',
+    icon: Smile,
     bg: 'bg-emerald-500/10 dark:bg-emerald-500/15',
     text: 'text-emerald-600 dark:text-emerald-400',
     border: 'border-emerald-500/30 dark:border-emerald-500/30',
   },
   CURHAT: {
     label: 'CURHAT',
-    icon: '🥺',
-    bg: 'bg-teal-500/10 dark:bg-teal-500/15',
-    text: 'text-teal-700 dark:text-teal-300',
-    border: 'border-teal-500/30 dark:border-teal-500/30',
-  },
-  INFO: {
-    label: 'INFO',
-    icon: '📢',
-    bg: 'bg-sky-500/10 dark:bg-sky-500/15',
-    text: 'text-sky-600 dark:text-sky-400',
-    border: 'border-sky-500/30 dark:border-sky-500/30',
-  },
-  TANYA: {
-    label: 'TANYA',
-    icon: '❓',
-    bg: 'bg-amber-600/10 dark:bg-amber-600/15',
-    text: 'text-amber-600 dark:text-amber-400',
-    border: 'border-amber-600/30 dark:border-amber-600/30',
-  },
-  EVENT: {
-    label: 'EVENT',
-    icon: '🎉',
+    icon: Heart,
     bg: 'bg-rose-500/10 dark:bg-rose-500/15',
     text: 'text-rose-600 dark:text-rose-400',
     border: 'border-rose-500/30 dark:border-rose-500/30',
   },
+  INFO: {
+    label: 'INFO',
+    icon: Megaphone,
+    bg: 'bg-cyan-500/10 dark:bg-cyan-500/15',
+    text: 'text-cyan-600 dark:text-cyan-400',
+    border: 'border-cyan-500/30 dark:border-cyan-500/30',
+  },
+  TANYA: {
+    label: 'TANYA',
+    icon: HelpCircle,
+    bg: 'bg-teal-500/10 dark:bg-teal-500/15',
+    text: 'text-teal-600 dark:text-teal-400',
+    border: 'border-teal-500/30 dark:border-teal-500/30',
+  },
+  EVENT: {
+    label: 'EVENT',
+    icon: Calendar,
+    bg: 'bg-indigo-500/10 dark:bg-indigo-500/15',
+    text: 'text-indigo-600 dark:text-indigo-400',
+    border: 'border-indigo-500/30 dark:border-indigo-500/30',
+  },
 };
 
-export function FlairBadge({
-  flair,
-  size = 'md',
-  interactive = false,
-  selected = false,
-  onClick,
-}: FlairBadgeProps) {
-  const config = FLAIR_CONFIG[flair] || FLAIR_CONFIG.INFO;
+interface FlairBadgeProps {
+  flair: PostFlair;
+  size?: 'sm' | 'md';
+  onClick?: () => void;
+  isActive?: boolean;
+}
 
-  const sizeClasses = {
-    sm: 'text-[11px] px-2 py-0.5 gap-1 font-medium',
-    md: 'text-xs px-2.5 py-1 gap-1.5 font-semibold',
-    lg: 'text-sm px-3.5 py-1.5 gap-2 font-bold',
-  }[size];
+export function FlairBadge({ flair, size = 'md', onClick, isActive }: FlairBadgeProps) {
+  const config = FLAIR_CONFIG[flair] || {
+    label: flair,
+    icon: Hash,
+    bg: 'bg-slate-500/10 dark:bg-slate-500/15',
+    text: 'text-slate-600 dark:text-slate-400',
+    border: 'border-slate-500/30 dark:border-slate-500/30',
+  };
+
+  const Icon = config.icon;
 
   return (
     <span
       onClick={onClick}
-      className={`inline-flex items-center rounded-full border transition-all duration-150 ${sizeClasses} ${
+      className={`inline-flex items-center gap-1 font-bold rounded-full border transition-all ${
         config.bg
       } ${config.text} ${config.border} ${
-        interactive
-          ? 'cursor-pointer hover:opacity-80 active:scale-95'
-          : ''
+        size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs'
       } ${
-        selected
-          ? 'ring-2 ring-orange-500 bg-orange-500/20 text-orange-500 dark:text-orange-400 font-bold scale-105'
+        isActive
+          ? 'ring-2 ring-sky-500 bg-sky-500/20 text-sky-500 dark:text-sky-400 font-bold scale-105'
           : ''
-      }`}
+      } ${onClick ? 'cursor-pointer hover:scale-105 active:scale-95' : ''}`}
     >
-      <span>{config.icon}</span>
+      <Icon className={size === 'sm' ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5'} />
       <span>{config.label}</span>
     </span>
   );

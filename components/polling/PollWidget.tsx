@@ -1,10 +1,10 @@
 'use client';
 
-import React from 'react';
-import { CheckCircle2, BarChart2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { BarChart2, CheckCircle2 } from 'lucide-react';
 import { Poll } from '@/lib/types';
 import { useSchooldit } from '@/lib/store';
-import { useToast } from '@/components/ui/Toast';
+import confetti from 'canvas-confetti';
 
 interface PollWidgetProps {
   postId: string;
@@ -13,71 +13,87 @@ interface PollWidgetProps {
 
 export function PollWidget({ postId, poll }: PollWidgetProps) {
   const { votePoll } = useSchooldit();
-  const { showToast } = useToast();
+  const [hasVotedLocally, setHasVotedLocally] = useState(false);
 
-  const handleVote = (optionId: string, optionText: string) => {
+  const handleVote = (optionId: string) => {
     votePoll(postId, optionId);
-    showToast('Vote Recorded!', `You voted: "${optionText}"`, 'success');
+    if (!hasVotedLocally) {
+      setHasVotedLocally(true);
+      confetti({
+        particleCount: 25,
+        spread: 40,
+        origin: { y: 0.8 },
+      });
+    }
   };
 
-  const totalVotes = Math.max(1, poll.totalVotes);
+  const isVoted = Boolean(poll.userVotedOptionId);
 
   return (
-    <div className="my-2.5 p-3.5 bg-slate-50 dark:bg-[#1a1f26] rounded-xl border border-slate-200 dark:border-[#252c36]">
-      <div className="flex items-center justify-between gap-2 mb-2.5">
+    <div className="my-3 p-3.5 bg-slate-50 dark:bg-[#162035] rounded-xl border border-slate-200 dark:border-[#1e293b] space-y-3 font-sans">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <BarChart2 className="w-4 h-4 text-orange-500" />
-          <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+          <BarChart2 className="w-4 h-4 text-sky-400" />
+          <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
             {poll.question}
-          </h4>
+          </span>
         </div>
-        <span className="text-[11px] text-slate-400 font-mono">
-          {poll.totalVotes} total votes
+        <span className="text-[10px] font-bold text-slate-400 font-mono">
+          {poll.totalVotes} suara
         </span>
       </div>
 
       <div className="space-y-2">
         {poll.options.map((option) => {
-          const isVoted = poll.userVotedOptionId === option.id;
-          const percentage = Math.round((option.votes / totalVotes) * 100) || 0;
+          const isSelected = poll.userVotedOptionId === option.id;
+          const percentage =
+            poll.totalVotes > 0
+              ? Math.round((option.votes / poll.totalVotes) * 100)
+              : 0;
 
           return (
             <button
               key={option.id}
               onClick={(e) => {
                 e.stopPropagation();
-                handleVote(option.id, option.text);
+                handleVote(option.id);
               }}
-              className={`w-full relative overflow-hidden rounded-xl border text-left p-2.5 transition-all group ${
-                isVoted
-                  ? 'border-orange-500 bg-orange-500/10 font-medium'
-                  : 'border-slate-200 dark:border-[#333d4b] bg-white dark:bg-[#14181d] hover:border-slate-400 dark:hover:border-slate-500'
+              className={`w-full relative overflow-hidden rounded-xl border text-left p-2.5 transition-all text-xs flex items-center justify-between ${
+                isSelected
+                  ? 'border-sky-500 bg-sky-500/10 font-medium'
+                  : 'border-slate-200 dark:border-[#1e293b] bg-white dark:bg-[#0f1626] hover:border-slate-400'
               }`}
             >
-              <div
-                className={`absolute inset-0 transition-all duration-300 opacity-20 ${
-                  isVoted ? 'bg-orange-500' : 'bg-slate-400 dark:bg-slate-600'
-                }`}
-                style={{ width: `${percentage}%` }}
-              />
+              {/* Fill Progress Bar */}
+              {isVoted && (
+                <div
+                  className={`absolute left-0 top-0 bottom-0 opacity-15 transition-all duration-500 ${
+                    isSelected ? 'bg-sky-500' : 'bg-slate-400 dark:bg-slate-600'
+                  }`}
+                  style={{ width: `${percentage}%` }}
+                />
+              )}
 
-              <div className="relative flex items-center justify-between gap-2 text-xs">
-                <div className="flex items-center gap-2 min-w-0">
-                  {isVoted && (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-orange-500 shrink-0" />
-                  )}
-                  <span
-                    className={`truncate ${
-                      isVoted ? 'text-orange-500 font-bold' : 'text-slate-800 dark:text-slate-200'
-                    }`}
-                  >
-                    {option.text}
-                  </span>
-                </div>
-                <span className="text-[11px] text-slate-400 font-mono shrink-0">
-                  {option.votes} ({percentage}%)
+              {/* Option Text */}
+              <div className="flex items-center gap-2 relative z-10">
+                {isSelected && (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                )}
+                <span
+                  className={
+                    isSelected ? 'text-sky-400 font-bold' : 'text-slate-800 dark:text-slate-200'
+                  }
+                >
+                  {option.text}
                 </span>
               </div>
+
+              {/* Percentage */}
+              {isVoted && (
+                <span className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400 relative z-10">
+                  {percentage}%
+                </span>
+              )}
             </button>
           );
         })}
