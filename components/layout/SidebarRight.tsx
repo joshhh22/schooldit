@@ -106,7 +106,7 @@ export function SidebarRight() {
             <li>
               <strong className="text-slate-900 dark:text-white uppercase tracking-wide">no baper</strong>
               <p className="pl-4 text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
-                BAPES = ZIONIS
+                BAPER = ZIONIS
               </p>
             </li>
           </ol>
