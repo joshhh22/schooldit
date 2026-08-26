@@ -17,6 +17,7 @@ import { PostFlair, PostType, Attachment } from '@/lib/types';
 import { useSchooldit } from '@/lib/store';
 import { useToast } from '@/components/ui/Toast';
 import { CreateSchoolModal } from '@/components/school/CreateSchoolModal';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase/client';
 
 const SUGGESTED_FLAIRS: PostFlair[] = [
   'RAMAI',
@@ -75,45 +76,88 @@ export function PostComposer({ onSuccess, defaultSchoolId }: PostComposerProps) 
     setPollOptions(updated);
   };
 
-  const handleUploadFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     const file = files[0];
-    if (file.size > 50 * 1024 * 1024) {
-      showToast('Ukuran File Terlalu Besar', 'Maksimal ukuran file adalah 50MB.', 'error');
+    if (file.size > 100 * 1024 * 1024) {
+      showToast('Ukuran File Terlalu Besar', 'Maksimal ukuran file adalah 100MB.', 'error');
       return;
     }
 
     setIsUploading(true);
-    setUploadProgress(30);
+    setUploadProgress(20);
 
     const isImg = file.type.startsWith('image/');
-    const isVid = file.type.startsWith('video/') || file.name.endsWith('.mp4') || file.name.endsWith('.webm') || file.name.endsWith('.mov');
+    const isVid =
+      file.type.startsWith('video/') ||
+      file.name.endsWith('.mp4') ||
+      file.name.endsWith('.webm') ||
+      file.name.endsWith('.mov');
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      setUploadProgress(100);
-      setIsUploading(false);
+    let finalUrl = '';
 
-      setAttachments((prev) => [
-        ...prev,
-        {
-          id: `att-${Date.now()}`,
-          type: isVid ? 'video' : isImg ? 'image' : 'document',
-          url: dataUrl,
-          name: file.name,
-          size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-        },
-      ]);
-      showToast('Media Terunggah', `${file.name} siap diposting.`, 'success');
-    };
-    reader.onerror = () => {
-      setIsUploading(false);
-      showToast('Gagal Membaca File', 'Terjadi kesalahan saat memproses media.', 'error');
-    };
-    reader.readAsDataURL(file);
+    // 1. Upload to Supabase Storage Bucket 'media'
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const fileExt = file.name.split('.').pop() || (isVid ? 'mp4' : 'jpg');
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+
+        setUploadProgress(50);
+        const { data, error } = await supabase.storage
+          .from('media')
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: true,
+          });
+
+        if (!error && data) {
+          const { data: pubData } = supabase.storage
+            .from('media')
+            .getPublicUrl(fileName);
+          finalUrl = pubData.publicUrl;
+        } else {
+          console.warn('Storage upload error, using fallback:', error?.message);
+        }
+      } catch (err) {
+        console.warn('Storage upload exception:', err);
+      }
+    }
+
+    // 2. Fallback to FileReader if storage not ready
+    if (!finalUrl) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        finalUrl = event.target?.result as string;
+        finishUpload(finalUrl, isVid, isImg, file);
+      };
+      reader.onerror = () => {
+        setIsUploading(false);
+        showToast('Gagal Membaca File', 'Terjadi kesalahan saat memproses media.', 'error');
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    finishUpload(finalUrl, isVid, isImg, file);
+  };
+
+  const finishUpload = (url: string, isVid: boolean, isImg: boolean, file: File) => {
+    setUploadProgress(100);
+    setIsUploading(false);
+
+    setAttachments((prev) => [
+      ...prev,
+      {
+        id: `att-${Date.now()}`,
+        type: isVid ? 'video' : isImg ? 'image' : 'document',
+        url: url,
+        name: file.name,
+        size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+      },
+    ]);
+    showToast('Media Terunggah', `${file.name} siap diposting.`, 'success');
   };
 
   const handleSubmit = (e: React.FormEvent) => {

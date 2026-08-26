@@ -172,3 +172,14 @@ CREATE POLICY "Public Read Reports" ON reports FOR SELECT USING (true);
 CREATE POLICY "Public Insert Reports" ON reports FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public Update Reports" ON reports FOR UPDATE USING (true);
 CREATE POLICY "Public Delete Reports" ON reports FOR DELETE USING (true);
+
+-- STORAGE BUCKET FOR VIDEOS & IMAGES
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('media', 'media', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+CREATE POLICY "Public Media Access" ON storage.objects
+FOR SELECT USING (bucket_id = 'media');
+
+CREATE POLICY "Public Media Upload" ON storage.objects
+FOR INSERT WITH CHECK (bucket_id = 'media');
