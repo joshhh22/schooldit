@@ -12,6 +12,7 @@ import {
   Trash2,
   UploadCloud,
   Film,
+  Globe,
 } from 'lucide-react';
 import { PostFlair, PostType, Attachment } from '@/lib/types';
 import { useSchooldit } from '@/lib/store';
@@ -49,12 +50,13 @@ export function PostComposer({ onSuccess, defaultSchoolId }: PostComposerProps) 
   const [linkUrl, setLinkUrl] = useState('');
   const [isCreateSchoolOpen, setIsCreateSchoolOpen] = useState(false);
 
-  // Attachments
+  // Drag and drop & Attachments state
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
 
-  // Poll
+  // Poll state
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
 
@@ -76,11 +78,8 @@ export function PostComposer({ onSuccess, defaultSchoolId }: PostComposerProps) 
     setPollOptions(updated);
   };
 
-  const handleUploadFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const file = files[0];
+  // Helper to process uploaded file (from file input, OS drag, or clipboard paste)
+  const processFile = async (file: File) => {
     if (file.size > 100 * 1024 * 1024) {
       showToast('Ukuran File Terlalu Besar', 'Maksimal ukuran file adalah 100MB.', 'error');
       return;
@@ -98,7 +97,7 @@ export function PostComposer({ onSuccess, defaultSchoolId }: PostComposerProps) 
 
     let finalUrl = '';
 
-    // 1. Upload to Supabase Storage Bucket 'media'
+    // 1. Try uploading to Supabase Storage Bucket 'media'
     if (isSupabaseConfigured && supabase) {
       try {
         const fileExt = file.name.split('.').pop() || (isVid ? 'mp4' : 'jpg');
@@ -118,19 +117,19 @@ export function PostComposer({ onSuccess, defaultSchoolId }: PostComposerProps) 
             .getPublicUrl(fileName);
           finalUrl = pubData.publicUrl;
         } else {
-          console.warn('Storage upload error, using fallback:', error?.message);
+          console.warn('Storage upload note:', error?.message);
         }
       } catch (err) {
         console.warn('Storage upload exception:', err);
       }
     }
 
-    // 2. Fallback to FileReader if storage not ready
+    // 2. Fallback to FileReader if storage not configured
     if (!finalUrl) {
       const reader = new FileReader();
       reader.onload = (event) => {
         finalUrl = event.target?.result as string;
-        finishUpload(finalUrl, isVid, isImg, file);
+        finishUpload(finalUrl, isVid, isImg, file.name, `${(file.size / (1024 * 1024)).toFixed(1)} MB`);
       };
       reader.onerror = () => {
         setIsUploading(false);
@@ -140,10 +139,10 @@ export function PostComposer({ onSuccess, defaultSchoolId }: PostComposerProps) 
       return;
     }
 
-    finishUpload(finalUrl, isVid, isImg, file);
+    finishUpload(finalUrl, isVid, isImg, file.name, `${(file.size / (1024 * 1024)).toFixed(1)} MB`);
   };
 
-  const finishUpload = (url: string, isVid: boolean, isImg: boolean, file: File) => {
+  const finishUpload = (url: string, isVid: boolean, isImg: boolean, name: string, size: string) => {
     setUploadProgress(100);
     setIsUploading(false);
 
@@ -153,11 +152,97 @@ export function PostComposer({ onSuccess, defaultSchoolId }: PostComposerProps) 
         id: `att-${Date.now()}`,
         type: isVid ? 'video' : isImg ? 'image' : 'document',
         url: url,
-        name: file.name,
-        size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+        name: name,
+        size: size,
       },
     ]);
-    showToast('Media Terunggah', `${file.name} siap diposting.`, 'success');
+    showToast('Media Ditambahkan', `${name} siap diposting.`, 'success');
+  };
+
+  const handleUploadFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    processFile(files[0]);
+  };
+
+  // Drag and Drop Handler (supports local files AND images dragged directly from Google / other tabs)
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    // Case 1: Local Files dragged from computer explorer
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      for (let i = 0; i < e.dataTransfer.files.length; i++) {
+        await processFile(e.dataTransfer.files[i]);
+      }
+      return;
+    }
+
+    // Case 2: Image dragged directly from Google Images or another website
+    const htmlData = e.dataTransfer.getData('text/html');
+    const uriList = e.dataTransfer.getData('text/uri-list');
+    const plainText = e.dataTransfer.getData('text/plain');
+
+    let extractedUrl = '';
+
+    if (htmlData) {
+      try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlData, 'text/html');
+        const img = doc.querySelector('img');
+        if (img && img.src) {
+          extractedUrl = img.src;
+        }
+      } catch {}
+    }
+
+    if (!extractedUrl && uriList) {
+      const urls = uriList.split('\r\n').filter((u) => u && !u.startsWith('#'));
+      if (urls.length > 0) {
+        extractedUrl = urls[0];
+      }
+    }
+
+    if (!extractedUrl && plainText && (plainText.startsWith('http://') || plainText.startsWith('https://') || plainText.startsWith('data:image'))) {
+      extractedUrl = plainText.trim();
+    }
+
+    if (extractedUrl) {
+      const isVid = extractedUrl.includes('.mp4') || extractedUrl.includes('.webm');
+      finishUpload(extractedUrl, isVid, !isVid, 'Web Image', 'Direct Web URL');
+      return;
+    }
+
+    showToast('Format Tidak Dikenal', 'Tarik file gambar/video atau copy-paste langsung.', 'info');
+  };
+
+  // Paste handler (supports screenshot paste Ctrl+V)
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1 || items[i].type.indexOf('video') !== -1) {
+        const file = items[i].getAsFile();
+        if (file) {
+          processFile(file);
+          break;
+        }
+      }
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -210,7 +295,10 @@ export function PostComposer({ onSuccess, defaultSchoolId }: PostComposerProps) 
 
   return (
     <>
-      <div className="reddit-card p-4 sm:p-6 bg-white dark:bg-[#0f1626] border-slate-200 dark:border-[#1e293b] space-y-4 font-sans">
+      <div
+        onPaste={handlePaste}
+        className="reddit-card p-4 sm:p-6 bg-white dark:bg-[#0f1626] border-slate-200 dark:border-[#1e293b] space-y-4 font-sans max-w-full"
+      >
         {/* Header Title */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-[#1e293b]">
           <h2 className="font-heading text-lg font-bold text-slate-900 dark:text-white">
@@ -309,20 +397,35 @@ export function PostComposer({ onSuccess, defaultSchoolId }: PostComposerProps) 
             </div>
           )}
 
-          {/* Media Upload Area (Images & Video MP4 / WebM / QuickTime) */}
+          {/* Media Upload Area (Supports File Picker, Local Drag-and-Drop, Web/Google Image Drag, Paste Ctrl+V) */}
           {activeType === 'image' && (
-            <div className="space-y-3 p-6 bg-slate-50 dark:bg-[#162035] rounded-xl border border-dashed border-slate-300 dark:border-[#334155] text-center">
-              <UploadCloud className="w-8 h-8 text-sky-400 mx-auto mb-2" />
-              <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                Drag and drop images, video (MP4, WebM, MOV), or documents
-              </p>
-              <p className="text-[11px] text-slate-400">Maksimal 100MB per file</p>
-              <label className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-full cursor-pointer transition-all">
-                <span>Upload Media (Foto / MP4 Video)</span>
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`space-y-3 p-6 sm:p-8 rounded-2xl border-2 border-dashed transition-all text-center ${
+                isDragging
+                  ? 'border-sky-500 bg-sky-500/10 scale-[1.01]'
+                  : 'border-slate-300 dark:border-[#334155] bg-slate-50 dark:bg-[#162035]'
+              }`}
+            >
+              <UploadCloud className={`w-10 h-10 mx-auto transition-transform ${isDragging ? 'text-sky-400 scale-125' : 'text-sky-500'}`} />
+              
+              <div>
+                <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                  Tarik gambar langsung dari Google / Komputer ke sini
+                </p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                  Mendukung Drag & Drop dari web/Google, Upload File (Foto/Video MP4), atau Paste (Ctrl+V)
+                </p>
+              </div>
+
+              <label className="inline-flex items-center gap-1.5 px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-full cursor-pointer transition-all shadow-xs active:scale-95">
+                <span>Pilih File Dari Komputer/HP</span>
                 <input
                   type="file"
                   accept="image/*,video/*,.mp4,.mov,.webm,.mkv,.pdf"
-                  onChange={handleUploadFile}
+                  onChange={handleUploadFileInput}
                   className="hidden"
                 />
               </label>
@@ -337,7 +440,7 @@ export function PostComposer({ onSuccess, defaultSchoolId }: PostComposerProps) 
               )}
 
               {attachments.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-4">
                   {attachments.map((att) => (
                     <div
                       key={att.id}
@@ -358,7 +461,7 @@ export function PostComposer({ onSuccess, defaultSchoolId }: PostComposerProps) 
                       <button
                         type="button"
                         onClick={() => setAttachments(attachments.filter((a) => a.id !== att.id))}
-                        className="absolute top-1 right-1 p-1 bg-black/80 hover:bg-rose-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all z-10"
+                        className="absolute top-1.5 right-1.5 p-1 bg-black/80 hover:bg-rose-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all z-10"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
