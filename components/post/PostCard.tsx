@@ -142,7 +142,7 @@ export function PostCard({ post, isDetailedView = false }: PostCardProps) {
 
         {/* Title */}
         <h3
-          className={`font-heading font-bold text-slate-900 dark:text-white leading-snug mb-2 ${
+          className={`font-heading font-bold text-slate-900 dark:text-white leading-snug mb-2 break-words [overflow-wrap:anywhere] ${
             isDetailedView ? 'text-lg sm:text-xl' : 'text-base sm:text-lg hover:text-sky-400 transition-colors'
           }`}
         >
@@ -150,7 +150,7 @@ export function PostCard({ post, isDetailedView = false }: PostCardProps) {
         </h3>
 
         {/* Content Preview / Full Content */}
-        <div className="text-slate-800 dark:text-slate-200 text-xs sm:text-sm leading-relaxed whitespace-pre-line mb-3 font-sans">
+        <div className="text-slate-800 dark:text-slate-200 text-xs sm:text-sm leading-relaxed whitespace-pre-line mb-3 font-sans break-words [overflow-wrap:anywhere]">
           {!isDetailedView && post.content.length > 300
             ? `${post.content.slice(0, 300)}...`
             : post.content}

@@ -62,7 +62,7 @@ export function CommentItem({ comment, postId }: CommentItemProps) {
           </div>
 
           {/* Text Content */}
-          <p className="text-slate-800 dark:text-slate-200 text-xs sm:text-sm leading-relaxed">
+          <p className="text-slate-800 dark:text-slate-200 text-xs sm:text-sm leading-relaxed break-words [overflow-wrap:anywhere]">
             {comment.content}
           </p>
 

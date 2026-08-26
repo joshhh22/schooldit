@@ -43,6 +43,10 @@
   }
 }
 
+* {
+  overflow-wrap: break-word;
+}
+
 body {
   background-color: var(--bg-main);
   color: var(--text-primary);
@@ -53,6 +57,7 @@ body {
 
 h1, h2, h3, h4, h5, h6, .font-heading {
   font-family: var(--font-heading);
+  overflow-wrap: break-word;
 }
 
 /* Reddit-Style Card */
@@ -61,6 +66,8 @@ h1, h2, h3, h4, h5, h6, .font-heading {
   border: 1px solid var(--border-subtle);
   border-radius: 0.75rem;
   transition: border-color 0.15s ease, background-color 0.15s ease;
+  overflow: hidden;
+  max-width: 100%;
 }
 
 .reddit-card:hover {
