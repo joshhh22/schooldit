@@ -36,24 +36,25 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={`${ibmPlexSans.variable} ${notoSans.variable} dark`}
+      className={`${ibmPlexSans.variable} ${notoSans.variable}`}
       suppressHydrationWarning
     >
-      <body className="min-h-screen flex flex-col bg-[#f1f5f9] dark:bg-[#070a12] text-slate-900 dark:text-slate-100 transition-colors pb-16 md:pb-0 font-sans">
+      <body className="min-h-screen flex flex-col bg-[#f4f6f8] dark:bg-[#070a12] text-slate-900 dark:text-slate-100 transition-colors pb-16 md:pb-0 font-sans antialiased">
         <SchoolditProvider>
           <ToastProvider>
-            {/* Top Fixed Header */}
+            {/* Top Fixed Reddit-Style Header */}
             <Header />
 
-            {/* Reddit Layout: Left Sidebar + Center Feed + Right Sidebar */}
-            <div className="w-full max-w-[1600px] mx-auto flex justify-center">
-              {/* Left Sidebar */}
+            {/* Reddit Full-Width Shell: Left Drawer flush to edge + Centered Main Feed + Right Sidebar */}
+            <div className="w-full flex-1 flex">
+              {/* Left Sidebar Flush to Left Edge */}
               <div className="hidden md:block shrink-0">
                 <SidebarLeft />
               </div>
 
-              {/* Main Content Area */}
-              <div className="flex-1 max-w-4xl px-3 sm:px-6 py-4 min-w-0 flex justify-center gap-6">
+              {/* Center Feed & Right Sidebar Container */}
+              <div className="flex-1 flex justify-center py-4 px-3 sm:px-6 gap-6 min-w-0">
+                {/* Main Middle Feed */}
                 <main className="flex-1 max-w-2xl min-w-0">{children}</main>
 
                 {/* Right Sidebar */}

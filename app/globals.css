@@ -1,21 +1,23 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
   :root {
     --font-heading: var(--font-ibm-plex), sans-serif;
     --font-body: var(--font-noto-sans), sans-serif;
 
     /* Light Theme */
-    --bg-main: #f1f5f9;
+    --bg-main: #f4f6f8;
     --bg-surface: #ffffff;
     --bg-surface-elevated: #f8fafc;
-    --bg-surface-hover: #e2e8f0;
-    --border-subtle: #cbd5e1;
-    --border-strong: #94a3b8;
+    --bg-surface-hover: #f1f5f9;
+    --border-subtle: #e2e8f0;
+    --border-strong: #cbd5e1;
     --text-primary: #0f172a;
-    --text-secondary: #475569;
+    --text-secondary: #334155;
     --text-muted: #64748b;
-    --accent: #0284c7; /* Deep Cyan / Blue */
+    --accent: #0284c7;
     --accent-hover: #0369a1;
     --accent-light: #e0f2fe;
     --vote-up: #0284c7;
@@ -53,7 +55,7 @@ h1, h2, h3, h4, h5, h6, .font-heading {
   font-family: var(--font-heading);
 }
 
-/* Reddit-Style Soft Card */
+/* Reddit-Style Card */
 .reddit-card {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);

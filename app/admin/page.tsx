@@ -97,9 +97,7 @@ export default function AdminPage() {
           </button>
         </form>
 
-        <p className="text-[11px] text-slate-400 pt-1">
-          💡 Default passcode: <code className="bg-slate-100 dark:bg-[#162035] px-1.5 py-0.5 rounded text-sky-400 font-mono">admin123</code> atau <code className="bg-slate-100 dark:bg-[#162035] px-1.5 py-0.5 rounded text-sky-400 font-mono">schooldit</code>
-        </p>
+
       </div>
     );
   }
