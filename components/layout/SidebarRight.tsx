@@ -16,7 +16,7 @@ export function SidebarRight() {
 
   return (
     <>
-      <aside className="w-80 space-y-4 text-xs font-sans">
+      <aside className="w-full space-y-4 text-xs font-sans">
         {/* About Schooldit Box */}
         <div className="reddit-card p-4 space-y-3 bg-white dark:bg-[#0f1626] border-slate-200 dark:border-[#1e293b]">
           <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-[#1e293b]">
@@ -28,7 +28,7 @@ export function SidebarRight() {
             </h3>
           </div>
 
-          <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed">
+          <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed font-sans">
             Tempat anak sekolah ngomong tanpa nama. Bebas berekspresi, spill info, dan ngobrol tanpa takut identitas bocor.
           </p>
 
@@ -83,29 +83,29 @@ export function SidebarRight() {
           )}
         </div>
 
-        {/* New Authentic Student Rules: 1. freedom, 2. no cepu, 3. no baper */}
+        {/* Authentic Student Rules: 1. freedom, 2. no cepu, 3. no baper */}
         <div className="reddit-card p-4 bg-white dark:bg-[#0f1626] border-slate-200 dark:border-[#1e293b] space-y-2.5">
           <h4 className="font-heading font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] flex items-center gap-1.5 pb-2 border-b border-slate-100 dark:border-[#1e293b]">
             <Shield className="w-3.5 h-3.5 text-emerald-400" />
             <span>SCHOOLDIT RULES</span>
           </h4>
 
-          <ol className="list-decimal list-inside space-y-2.5 text-slate-600 dark:text-slate-300 text-xs leading-relaxed font-sans">
+          <ol className="list-decimal list-inside space-y-2.5 text-slate-700 dark:text-slate-300 text-xs leading-relaxed font-sans">
             <li>
               <strong className="text-slate-900 dark:text-white uppercase tracking-wide">freedom</strong>
-              <p className="pl-4 text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Bebas ngomong, curhat, diskusi, spill fakta, tanpa batasan topik sekolah.
+              <p className="pl-4 text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
+                Bebas ngomong, curhat, diskusi, spill fakta, tanpa batasan topik.
               </p>
             </li>
             <li>
               <strong className="text-slate-900 dark:text-white uppercase tracking-wide">no cepu</strong>
-              <p className="pl-4 text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Dilarang keras doxxing, sebar data pribadi, nama asli, atau nomor WA teman/guru.
+              <p className="pl-4 text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
+                Dilarang keras doxxing, sebar data pribadi, nama asli, atau nomor WA orang lain.
               </p>
             </li>
             <li>
               <strong className="text-slate-900 dark:text-white uppercase tracking-wide">no baper</strong>
-              <p className="pl-4 text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="pl-4 text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
                 Opini orang beda-beda. Jangan gampang tersinggung, nikmati obrolan santai.
               </p>
             </li>

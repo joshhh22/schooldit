@@ -6,7 +6,8 @@ export type PostFlair =
   | 'CURHAT'
   | 'INFO'
   | 'TANYA'
-  | 'EVENT';
+  | 'EVENT'
+  | string;
 
 export type PostType = 'text' | 'image' | 'video' | 'document' | 'link' | 'poll';
 
@@ -15,9 +16,8 @@ export interface School {
   slug: string;
   name: string;
   shortName: string;
-  city: string;
-  province?: string;
-  type: 'SMA' | 'SMK' | 'MA' | 'SMP' | 'Lainnya';
+  category?: 'Hobi' | 'Olahraga' | 'Gaming' | 'Musik' | 'Akademik' | 'Sekolah' | 'Curhat' | 'Lainnya';
+  city?: string;
   badgeColor: string;
   bannerImage?: string;
   description: string;
@@ -25,6 +25,8 @@ export interface School {
   postCount: number;
   verified?: boolean;
 }
+
+export type Community = School;
 
 export interface Attachment {
   id: string;

@@ -72,7 +72,7 @@ interface SchoolditContextType {
 
 const SchoolditContext = createContext<SchoolditContextType | undefined>(undefined);
 
-const STORAGE_VERSION = 'v4_clean_production_schooldit';
+const STORAGE_VERSION = 'v5_communities_layout';
 
 export function SchoolditProvider({ children }: { children: React.ReactNode }) {
   const [isMounted, setIsMounted] = useState(false);
@@ -240,10 +240,10 @@ export function SchoolditProvider({ children }: { children: React.ReactNode }) {
     setSessionState(s);
   };
 
-  // Admin authentication (Passcode: 'admin123' or 'schooldit')
+  // Admin authentication (Passcode: 'akusayangjane')
   const loginAdmin = (passcode: string): boolean => {
-    const validCodes = ['admin123', 'schooldit', 'schooldit-admin'];
-    if (validCodes.includes(passcode.trim())) {
+    const validCodes = ['akusayangjane', 'schooldit'];
+    if (validCodes.includes(passcode.trim().toLowerCase())) {
       setIsAdmin(true);
       if (typeof window !== 'undefined') {
         localStorage.setItem('schooldit_admin', 'true');

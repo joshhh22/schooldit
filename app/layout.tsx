@@ -45,23 +45,24 @@ export default function RootLayout({
             {/* Top Fixed Reddit-Style Header */}
             <Header />
 
-            {/* Reddit Full-Width Shell: Left Drawer flush to edge + Centered Main Feed + Right Sidebar */}
-            <div className="w-full flex-1 flex">
+            {/* 3-Column Edge-to-Edge Grid (Left Sidebar -> Center Feed -> Right Sidebar at Corner) */}
+            <div className="w-full flex-1 flex min-h-[calc(100vh-3.5rem)]">
               {/* Left Sidebar Flush to Left Edge */}
               <div className="hidden md:block shrink-0">
                 <SidebarLeft />
               </div>
 
-              {/* Center Feed & Right Sidebar Container */}
-              <div className="flex-1 flex justify-center py-4 px-3 sm:px-6 gap-6 min-w-0">
-                {/* Main Middle Feed */}
-                <main className="flex-1 max-w-2xl min-w-0">{children}</main>
+              {/* Middle Feed: Expands smoothly in the center */}
+              <main className="flex-1 min-w-0 py-4 px-3 sm:px-6">
+                <div className="max-w-3xl mx-auto xl:max-w-4xl">
+                  {children}
+                </div>
+              </main>
 
-                {/* Right Sidebar */}
-                <div className="hidden lg:block shrink-0">
-                  <div className="sticky top-18">
-                    <SidebarRight />
-                  </div>
+              {/* Right Sidebar: Anchored to the Right Edge / Corner */}
+              <div className="hidden lg:block shrink-0 w-80 xl:w-84 border-l border-slate-200 dark:border-[#1e293b] p-4 bg-white/50 dark:bg-[#0f1626]/50">
+                <div className="sticky top-18">
+                  <SidebarRight />
                 </div>
               </div>
             </div>

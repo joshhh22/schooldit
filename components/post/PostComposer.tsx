@@ -184,13 +184,13 @@ export function PostComposer({ onSuccess, defaultSchoolId }: PostComposerProps) 
               }}
               className="w-full text-xs font-semibold py-2 px-3 bg-slate-100 dark:bg-[#162035] border border-slate-200 dark:border-[#1e293b] rounded-xl text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-sky-500"
             >
-              <option value="all">🌐 s/semua (Publik Lintas Sekolah)</option>
+              <option value="all">🌐 s/semua (Feed Utama Publik)</option>
               {schools.map((s) => (
                 <option key={s.id} value={s.id}>
-                  🏫 s/{s.slug} ({s.shortName})
+                  👥 s/{s.slug} ({s.name})
                 </option>
               ))}
-              <option value="__new__">+ Buat Komunitas Sekolah Baru...</option>
+              <option value="__new__">+ Buat Komunitas Baru...</option>
             </select>
           </div>
 
@@ -199,7 +199,7 @@ export function PostComposer({ onSuccess, defaultSchoolId }: PostComposerProps) 
             onClick={() => setIsCreateSchoolOpen(true)}
             className="text-xs font-semibold text-sky-400 hover:underline px-2 py-1"
           >
-            + Daftarkan Sekolah Lain
+            + Buat Komunitas Baru
           </button>
         </div>
 
