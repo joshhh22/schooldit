@@ -160,10 +160,14 @@ CREATE POLICY "Public Read Schools" ON schools FOR SELECT USING (true);
 CREATE POLICY "Public Insert Schools" ON schools FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public Read Posts" ON posts FOR SELECT USING (true);
 CREATE POLICY "Public Insert Posts" ON posts FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public Update Posts" ON posts FOR UPDATE USING (true) WITH CHECK (true);
 CREATE POLICY "Public Delete Posts" ON posts FOR DELETE USING (true);
+
 CREATE POLICY "Public Read Comments" ON comments FOR SELECT USING (true);
 CREATE POLICY "Public Insert Comments" ON comments FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public Update Comments" ON comments FOR UPDATE USING (true) WITH CHECK (true);
 CREATE POLICY "Public Delete Comments" ON comments FOR DELETE USING (true);
+
 CREATE POLICY "Public Read Polls" ON polls FOR SELECT USING (true);
 CREATE POLICY "Public Read Poll Options" ON poll_options FOR SELECT USING (true);
 CREATE POLICY "Public Vote" ON votes FOR ALL USING (true);
@@ -172,6 +176,11 @@ CREATE POLICY "Public Read Reports" ON reports FOR SELECT USING (true);
 CREATE POLICY "Public Insert Reports" ON reports FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public Update Reports" ON reports FOR UPDATE USING (true);
 CREATE POLICY "Public Delete Reports" ON reports FOR DELETE USING (true);
+
+-- REALTIME REPLICATION SETUP
+ALTER PUBLICATION supabase_realtime ADD TABLE posts;
+ALTER PUBLICATION supabase_realtime ADD TABLE comments;
+ALTER PUBLICATION supabase_realtime ADD TABLE schools;
 
 -- STORAGE BUCKET FOR VIDEOS & IMAGES
 INSERT INTO storage.buckets (id, name, public) 

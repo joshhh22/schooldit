@@ -193,6 +193,67 @@ export function SchoolditProvider({ children }: { children: React.ReactNode }) {
               setPosts(mapped);
             }
           });
+
+        // Setup Realtime Live Sync across all devices
+        const channel = supabase
+          .channel('realtime_posts_sync')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'posts' },
+            (payload) => {
+              if (payload.eventType === 'INSERT') {
+                const d = payload.new;
+                setPosts((prev) => {
+                  if (prev.some((p) => p.id === d.id)) return prev;
+                  const newP: Post = {
+                    id: d.id,
+                    schoolId: d.school_id || 'all',
+                    schoolName: d.school_name || 's/semua',
+                    schoolSlug: d.school_slug || 'all',
+                    title: d.title,
+                    content: d.content,
+                    flair: d.flair,
+                    type: d.post_type || 'text',
+                    authorPseudonym: d.author_pseudonym,
+                    authorAvatar: d.author_avatar,
+                    authorColor: d.author_color,
+                    createdAt: 'Baru saja',
+                    votes: d.votes || 1,
+                    commentsCount: d.comments_count || 0,
+                    viewCount: d.view_count || 1,
+                    tags: d.tags || [],
+                    linkUrl: d.link_url,
+                    attachments: Array.isArray(d.attachments) ? d.attachments : [],
+                  };
+                  return [newP, ...prev];
+                });
+              } else if (payload.eventType === 'UPDATE') {
+                const d = payload.new;
+                setPosts((prev) =>
+                  prev.map((p) =>
+                    p.id === d.id
+                      ? {
+                          ...p,
+                          votes: d.votes,
+                          commentsCount: d.comments_count,
+                          viewCount: d.view_count,
+                          title: d.title,
+                          content: d.content,
+                        }
+                      : p
+                  )
+                );
+              } else if (payload.eventType === 'DELETE') {
+                const oldId = payload.old.id;
+                setPosts((prev) => prev.filter((p) => p.id !== oldId));
+              }
+            }
+          )
+          .subscribe();
+
+        return () => {
+          if (supabase) supabase.removeChannel(channel);
+        };
       } else {
         // Load from local storage
         const savedPosts = localStorage.getItem('schooldit_posts');
@@ -587,9 +648,14 @@ export function SchoolditProvider({ children }: { children: React.ReactNode }) {
               delta = direction === 'up' ? 1 : -1;
             }
 
+            const newVotes = item.votes + delta;
+            if (isSupabaseConfigured && supabase) {
+              supabase.from('comments').update({ votes: newVotes }).eq('id', commentId).then();
+            }
+
             return {
               ...item,
-              votes: item.votes + delta,
+              votes: newVotes,
               userVote: nextUserVote,
             };
           }
