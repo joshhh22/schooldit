@@ -1,24 +1,23 @@
 -- ==============================================================================
 -- SCHOOLDIT DATABASE SCHEMA (Supabase PostgreSQL)
--- Tempat anak sekolah ngomong tanpa nama.
+-- Tempat ngomong tanpa nama & forum komunitas.
 -- ==============================================================================
 
 -- Enable UUID Extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 1. SCHOOLS
+-- 1. COMMUNITIES / SCHOOLS
 CREATE TABLE IF NOT EXISTS schools (
     id TEXT PRIMARY KEY,
     slug TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
     short_name TEXT NOT NULL,
-    city TEXT NOT NULL,
-    province TEXT NOT NULL,
-    type TEXT NOT NULL CHECK (type IN ('SMA', 'SMK', 'MA')),
-    badge_color TEXT DEFAULT '#3b82f6',
+    city TEXT DEFAULT 'Indonesia',
+    category TEXT DEFAULT 'Hobi',
+    badge_color TEXT DEFAULT '#0284c7',
     description TEXT,
     banner_image TEXT,
-    member_count INT DEFAULT 0,
+    member_count INT DEFAULT 1,
     post_count INT DEFAULT 0,
     verified BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
@@ -40,14 +39,15 @@ CREATE TABLE IF NOT EXISTS anonymous_sessions (
 CREATE TABLE IF NOT EXISTS posts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     school_id TEXT REFERENCES schools(id) ON DELETE SET NULL,
-    author_session_id UUID REFERENCES anonymous_sessions(id) ON DELETE CASCADE,
+    school_name TEXT DEFAULT 's/semua',
+    school_slug TEXT DEFAULT 'all',
     author_pseudonym TEXT NOT NULL,
     author_avatar TEXT NOT NULL,
     author_color TEXT NOT NULL,
     title TEXT NOT NULL,
     content TEXT NOT NULL,
-    flair TEXT NOT NULL CHECK (flair IN ('RAMAI', 'SPILL', 'NGOBROL', 'WKWK', 'CURHAT', 'INFO', 'TANYA', 'EVENT')),
-    post_type TEXT NOT NULL DEFAULT 'text' CHECK (post_type IN ('text', 'image', 'video', 'document', 'link', 'poll')),
+    flair TEXT NOT NULL DEFAULT 'NGOBROL',
+    post_type TEXT NOT NULL DEFAULT 'text',
     votes INT DEFAULT 1,
     comments_count INT DEFAULT 0,
     view_count INT DEFAULT 0,
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS posts (
 CREATE TABLE IF NOT EXISTS attachments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     post_id UUID REFERENCES posts(id) ON DELETE CASCADE,
-    file_type TEXT NOT NULL CHECK (file_type IN ('image', 'video', 'document')),
+    file_type TEXT NOT NULL,
     file_url TEXT NOT NULL,
     file_name TEXT NOT NULL,
     file_size TEXT NOT NULL,
@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS poll_votes (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     poll_id UUID REFERENCES polls(id) ON DELETE CASCADE,
     option_id UUID REFERENCES poll_options(id) ON DELETE CASCADE,
-    session_id UUID REFERENCES anonymous_sessions(id) ON DELETE CASCADE,
+    session_id TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     UNIQUE (poll_id, session_id)
 );
@@ -101,7 +101,6 @@ CREATE TABLE IF NOT EXISTS comments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     post_id UUID REFERENCES posts(id) ON DELETE CASCADE,
     parent_id UUID REFERENCES comments(id) ON DELETE CASCADE,
-    author_session_id UUID REFERENCES anonymous_sessions(id) ON DELETE CASCADE,
     author_pseudonym TEXT NOT NULL,
     author_avatar TEXT NOT NULL,
     author_color TEXT NOT NULL,
@@ -113,9 +112,9 @@ CREATE TABLE IF NOT EXISTS comments (
 -- 7. VOTES (Post & Comment Voting Tracking)
 CREATE TABLE IF NOT EXISTS votes (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    target_id UUID NOT NULL,
+    target_id TEXT NOT NULL,
     target_type TEXT NOT NULL CHECK (target_type IN ('post', 'comment')),
-    session_id UUID REFERENCES anonymous_sessions(id) ON DELETE CASCADE,
+    session_id TEXT NOT NULL,
     vote_direction INT NOT NULL CHECK (vote_direction IN (1, -1)),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     UNIQUE (target_id, target_type, session_id)
@@ -124,10 +123,11 @@ CREATE TABLE IF NOT EXISTS votes (
 -- 8. REPORTS (Moderation)
 CREATE TABLE IF NOT EXISTS reports (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    target_id UUID NOT NULL,
+    target_id TEXT NOT NULL,
     target_type TEXT NOT NULL CHECK (target_type IN ('post', 'comment')),
-    reporter_session_id UUID REFERENCES anonymous_sessions(id) ON DELETE SET NULL,
-    reason TEXT NOT NULL CHECK (reason IN ('Spam', 'Pelecehan', 'Data pribadi', 'Penyamaran', 'Konten ilegal', 'Lainnya')),
+    post_title TEXT,
+    target_content TEXT NOT NULL,
+    reason TEXT NOT NULL,
     details TEXT,
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'resolved', 'dismissed')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
@@ -151,14 +151,20 @@ ALTER TABLE poll_votes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
 
--- Allow Public Anonymous Read
+-- Allow Public Anonymous CRUD Policies
 CREATE POLICY "Public Read Schools" ON schools FOR SELECT USING (true);
+CREATE POLICY "Public Insert Schools" ON schools FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public Read Posts" ON posts FOR SELECT USING (true);
 CREATE POLICY "Public Insert Posts" ON posts FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public Delete Posts" ON posts FOR DELETE USING (true);
 CREATE POLICY "Public Read Comments" ON comments FOR SELECT USING (true);
 CREATE POLICY "Public Insert Comments" ON comments FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public Delete Comments" ON comments FOR DELETE USING (true);
 CREATE POLICY "Public Read Polls" ON polls FOR SELECT USING (true);
 CREATE POLICY "Public Read Poll Options" ON poll_options FOR SELECT USING (true);
 CREATE POLICY "Public Vote" ON votes FOR ALL USING (true);
 CREATE POLICY "Public Poll Vote" ON poll_votes FOR ALL USING (true);
+CREATE POLICY "Public Read Reports" ON reports FOR SELECT USING (true);
 CREATE POLICY "Public Insert Reports" ON reports FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public Update Reports" ON reports FOR UPDATE USING (true);
+CREATE POLICY "Public Delete Reports" ON reports FOR DELETE USING (true);

@@ -12,13 +12,8 @@ import {
   Attachment,
   Poll,
 } from './types';
-import {
-  INITIAL_SCHOOLS,
-  INITIAL_POSTS,
-  INITIAL_COMMENTS,
-  INITIAL_REPORTS,
-} from './mockData';
 import { generateRandomSession } from './pseudonyms';
+import { supabase, isSupabaseConfigured } from './supabase/client';
 
 interface SchoolditContextType {
   isMounted: boolean;
@@ -105,7 +100,6 @@ export function SchoolditProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== 'undefined') {
       const currentVer = localStorage.getItem('schooldit_version');
       if (currentVer !== STORAGE_VERSION) {
-        // Complete purge of any past dummy posts or cache
         localStorage.removeItem('schooldit_posts');
         localStorage.removeItem('schooldit_schools');
         localStorage.removeItem('schooldit_comments');
@@ -127,38 +121,6 @@ export function SchoolditProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('schooldit_session', JSON.stringify(fresh));
       }
 
-      // Load posts
-      const savedPosts = localStorage.getItem('schooldit_posts');
-      if (savedPosts) {
-        try {
-          setPosts(JSON.parse(savedPosts));
-        } catch {}
-      }
-
-      // Load schools
-      const savedSchools = localStorage.getItem('schooldit_schools');
-      if (savedSchools) {
-        try {
-          setSchools(JSON.parse(savedSchools));
-        } catch {}
-      }
-
-      // Load comments
-      const savedComments = localStorage.getItem('schooldit_comments');
-      if (savedComments) {
-        try {
-          setCommentsMap(JSON.parse(savedComments));
-        } catch {}
-      }
-
-      // Load reports
-      const savedReports = localStorage.getItem('schooldit_reports');
-      if (savedReports) {
-        try {
-          setReports(JSON.parse(savedReports));
-        } catch {}
-      }
-
       // Load admin state
       const savedAdmin = localStorage.getItem('schooldit_admin');
       if (savedAdmin === 'true') {
@@ -170,6 +132,97 @@ export function SchoolditProvider({ children }: { children: React.ReactNode }) {
       const initialTheme = savedTheme || 'dark';
       setThemeState(initialTheme);
       applyTheme(initialTheme);
+
+      // If Supabase is configured, fetch from cloud database
+      if (isSupabaseConfigured && supabase) {
+        // Fetch communities
+        supabase
+          .from('schools')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .then(({ data, error }) => {
+            if (!error && data && data.length > 0) {
+              const mapped: School[] = data.map((d: any) => ({
+                id: d.id,
+                slug: d.slug,
+                name: d.name,
+                shortName: d.short_name || d.name,
+                city: d.city,
+                category: d.category || 'Hobi',
+                badgeColor: d.badge_color || '#0284c7',
+                description: d.description || '',
+                memberCount: d.member_count || 1,
+                postCount: d.post_count || 0,
+              }));
+              setSchools(mapped);
+            }
+          });
+
+        // Fetch posts
+        supabase
+          .from('posts')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .then(({ data, error }) => {
+            if (!error && data) {
+              const mapped: Post[] = data.map((d: any) => ({
+                id: d.id,
+                schoolId: d.school_id || 'all',
+                schoolName: d.school_name || 's/semua',
+                schoolSlug: d.school_slug || 'all',
+                title: d.title,
+                content: d.content,
+                flair: d.flair,
+                type: d.post_type || 'text',
+                authorPseudonym: d.author_pseudonym,
+                authorAvatar: d.author_avatar,
+                authorColor: d.author_color,
+                createdAt: new Date(d.created_at).toLocaleDateString('id-ID', {
+                  day: 'numeric',
+                  month: 'short',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                }),
+                votes: d.votes || 1,
+                commentsCount: d.comments_count || 0,
+                viewCount: d.view_count || 1,
+                tags: d.tags || [],
+                linkUrl: d.link_url,
+                attachments: [],
+              }));
+              setPosts(mapped);
+            }
+          });
+      } else {
+        // Load from local storage
+        const savedPosts = localStorage.getItem('schooldit_posts');
+        if (savedPosts) {
+          try {
+            setPosts(JSON.parse(savedPosts));
+          } catch {}
+        }
+
+        const savedSchools = localStorage.getItem('schooldit_schools');
+        if (savedSchools) {
+          try {
+            setSchools(JSON.parse(savedSchools));
+          } catch {}
+        }
+
+        const savedComments = localStorage.getItem('schooldit_comments');
+        if (savedComments) {
+          try {
+            setCommentsMap(JSON.parse(savedComments));
+          } catch {}
+        }
+
+        const savedReports = localStorage.getItem('schooldit_reports');
+        if (savedReports) {
+          try {
+            setReports(JSON.parse(savedReports));
+          } catch {}
+        }
+      }
     }
   }, []);
 
@@ -199,36 +252,16 @@ export function SchoolditProvider({ children }: { children: React.ReactNode }) {
     setSidebarOpen((prev) => !prev);
   };
 
-  // Sync state to local storage after mounting
+  // Sync state to local storage when not using Supabase
   useEffect(() => {
-    if (isMounted && typeof window !== 'undefined') {
+    if (isMounted && typeof window !== 'undefined' && !isSupabaseConfigured) {
       localStorage.setItem('schooldit_session', JSON.stringify(session));
-    }
-  }, [session, isMounted]);
-
-  useEffect(() => {
-    if (isMounted && typeof window !== 'undefined') {
       localStorage.setItem('schooldit_schools', JSON.stringify(schools));
-    }
-  }, [schools, isMounted]);
-
-  useEffect(() => {
-    if (isMounted && typeof window !== 'undefined') {
       localStorage.setItem('schooldit_posts', JSON.stringify(posts));
-    }
-  }, [posts, isMounted]);
-
-  useEffect(() => {
-    if (isMounted && typeof window !== 'undefined') {
       localStorage.setItem('schooldit_comments', JSON.stringify(commentsMap));
-    }
-  }, [commentsMap, isMounted]);
-
-  useEffect(() => {
-    if (isMounted && typeof window !== 'undefined') {
       localStorage.setItem('schooldit_reports', JSON.stringify(reports));
     }
-  }, [reports, isMounted]);
+  }, [session, schools, posts, commentsMap, reports, isMounted]);
 
   const regenerateSession = () => {
     const newSession = generateRandomSession(session.sessionId);
@@ -281,6 +314,22 @@ export function SchoolditProvider({ children }: { children: React.ReactNode }) {
       ...schoolData,
     };
     setSchools((prev) => [newSchool, ...prev]);
+
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('schools').insert({
+        id: newSchool.id,
+        slug: newSchool.slug,
+        name: newSchool.name,
+        short_name: newSchool.shortName,
+        city: newSchool.city || 'Indonesia',
+        category: newSchool.category || 'Hobi',
+        badge_color: newSchool.badgeColor,
+        description: newSchool.description,
+        member_count: 1,
+        post_count: 0,
+      }).then();
+    }
+
     return newSchool;
   };
 
@@ -309,9 +358,15 @@ export function SchoolditProvider({ children }: { children: React.ReactNode }) {
           delta = direction === 'up' ? 1 : -1;
         }
 
+        const newVotes = p.votes + delta;
+
+        if (isSupabaseConfigured && supabase) {
+          supabase.from('posts').update({ votes: newVotes }).eq('id', postId).then();
+        }
+
         return {
           ...p,
-          votes: p.votes + delta,
+          votes: newVotes,
           userVote: nextUserVote,
         };
       })
@@ -411,6 +466,26 @@ export function SchoolditProvider({ children }: { children: React.ReactNode }) {
       );
     }
 
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('posts').insert({
+        school_id: postData.schoolId === 'all' ? null : postData.schoolId,
+        school_name: schoolName,
+        school_slug: schoolSlug,
+        author_pseudonym: session.pseudonym,
+        author_avatar: session.avatar,
+        author_color: session.color,
+        title: postData.title,
+        content: postData.content,
+        flair: postData.flair,
+        post_type: postData.type,
+        votes: 1,
+        comments_count: 0,
+        view_count: 1,
+        tags: postData.tags || [`#${postData.flair.toLowerCase()}`],
+        link_url: postData.linkUrl || null,
+      }).then();
+    }
+
     return newPost;
   };
 
@@ -473,6 +548,18 @@ export function SchoolditProvider({ children }: { children: React.ReactNode }) {
       )
     );
 
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('comments').insert({
+        post_id: postId,
+        parent_id: parentId || null,
+        author_pseudonym: session.pseudonym,
+        author_avatar: session.avatar,
+        author_color: session.color,
+        content,
+        votes: 1,
+      }).then();
+    }
+
     return newComment;
   };
 
@@ -532,10 +619,21 @@ export function SchoolditProvider({ children }: { children: React.ReactNode }) {
       status: 'pending',
     };
     setReports((prev) => [newReport, ...prev]);
+
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('reports').insert({
+        target_id: reportData.targetId,
+        target_type: reportData.targetType,
+        post_title: reportData.postTitle || null,
+        target_content: reportData.targetContent,
+        reason: reportData.reason,
+        details: reportData.details || null,
+        status: 'pending',
+      }).then();
+    }
   };
 
   const handleReportAction = (reportId: string, action: 'dismiss' | 'delete') => {
-    // ONLY admin can delete content or handle report action
     if (!isAdmin) return;
 
     const targetReport = reports.find((r) => r.id === reportId);
@@ -544,6 +642,9 @@ export function SchoolditProvider({ children }: { children: React.ReactNode }) {
     if (action === 'delete') {
       if (targetReport.targetType === 'post') {
         setPosts((prev) => prev.filter((p) => p.id !== targetReport.targetId));
+        if (isSupabaseConfigured && supabase) {
+          supabase.from('posts').delete().eq('id', targetReport.targetId).then();
+        }
       } else if (targetReport.targetType === 'comment') {
         setCommentsMap((prev) => {
           const newMap = { ...prev };
@@ -559,6 +660,9 @@ export function SchoolditProvider({ children }: { children: React.ReactNode }) {
           }
           return newMap;
         });
+        if (isSupabaseConfigured && supabase) {
+          supabase.from('comments').delete().eq('id', targetReport.targetId).then();
+        }
       }
     }
 
