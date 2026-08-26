@@ -133,6 +133,13 @@ export function SchoolditProvider({ children }: { children: React.ReactNode }) {
       setThemeState(initialTheme);
       applyTheme(initialTheme);
 
+      // Load local user votes tracking
+      let savedVotes: Record<string, 'up' | 'down'> = {};
+      try {
+        const stored = localStorage.getItem('schooldit_user_votes');
+        if (stored) savedVotes = JSON.parse(stored);
+      } catch {}
+
       // If Supabase is configured, fetch from cloud database
       if (isSupabaseConfigured && supabase) {
         // Fetch communities
@@ -184,6 +191,7 @@ export function SchoolditProvider({ children }: { children: React.ReactNode }) {
                   minute: '2-digit',
                 }),
                 votes: d.votes || 1,
+                userVote: savedVotes[d.id] || null,
                 commentsCount: d.comments_count || 0,
                 viewCount: d.view_count || 1,
                 tags: d.tags || [],
@@ -419,7 +427,18 @@ export function SchoolditProvider({ children }: { children: React.ReactNode }) {
           delta = direction === 'up' ? 1 : -1;
         }
 
-        const newVotes = p.votes + delta;
+        const newVotes = Math.max(0, p.votes + delta);
+
+        // Update local device persistent vote tracking
+        try {
+          const storedVotes = JSON.parse(localStorage.getItem('schooldit_user_votes') || '{}');
+          if (nextUserVote) {
+            storedVotes[postId] = nextUserVote;
+          } else {
+            delete storedVotes[postId];
+          }
+          localStorage.setItem('schooldit_user_votes', JSON.stringify(storedVotes));
+        } catch {}
 
         if (isSupabaseConfigured && supabase) {
           supabase.from('posts').update({ votes: newVotes }).eq('id', postId).then();
@@ -520,6 +539,12 @@ export function SchoolditProvider({ children }: { children: React.ReactNode }) {
     };
 
     setPosts((prev) => [newPost, ...prev]);
+
+    try {
+      const storedVotes = JSON.parse(localStorage.getItem('schooldit_user_votes') || '{}');
+      storedVotes[newPost.id] = 'up';
+      localStorage.setItem('schooldit_user_votes', JSON.stringify(storedVotes));
+    } catch {}
 
     if (school) {
       setSchools((prev) =>
